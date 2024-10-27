@@ -1,8 +1,12 @@
+# server/app.py
+#!/usr/bin/env python3
+
+
 from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-from models import db, Message
+from models import db, Movie
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -14,32 +18,24 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-@app.route('/messages', methods=['GET', 'POST'])
-def messages():
+@app.route('/movies', methods=['GET'])
+def movies():
     if request.method == 'GET':
-        messages = Message.query.order_by('created_at').all()
+        movies = Movie.query.all()
 
-        response = make_response(
-            jsonify([message.to_dict() for message in messages]),
+        return make_response(
+            jsonify([movie.to_dict() for movie in movies]),
             200,
         )
+
+    return make_response(
+        jsonify({"text": "Method Not Allowed"}),
+        405,
+    )
+
+if __name__ == '__main__':
+    app.run(port=5555)
     
-    elif request.method == 'POST':
-        data = request.get_json()
-        message = Message(
-            body=data['body'],
-            username=data['username']
-        )
-
-        db.session.add(message)
-        db.session.commit()
-
-        response = make_response(
-            jsonify(message.to_dict()),
-            201,
-        )
-
-    return response
 
 @app.route('/messages/<int:id>', methods=['PATCH', 'DELETE'])
 def messages_by_id(id):
